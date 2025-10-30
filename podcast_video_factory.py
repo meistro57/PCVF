@@ -64,7 +64,6 @@ def main():
         else:
             # Import transcribe_audio directly for more control
             from core.transcript_parser import transcribe_audio
-            from pathlib import Path
             lines = transcribe_audio(Path(args.audio), model_size=args.whisper_model, device=args.whisper_device)
         logger.info("Parsed transcript")
 
