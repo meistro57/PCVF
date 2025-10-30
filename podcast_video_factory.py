@@ -33,34 +33,34 @@ def main():
     args = parser.parse_args()
 
     # Override config with args
-    if args.srt: SRT_PATH = args.srt
-    if args.out: OUTPUT_ROOT = args.out
-    if args.seg_sec: SEGMENT_SECONDS = args.seg_sec
-    if args.width: WIDTH = args.width
-    if args.height: HEIGHT = args.height
-    if args.fps: VIDEO_FPS = args.fps
-    if args.bitrate: VIDEO_BITRATE = args.bitrate
-    if args.style: GLOBAL_STYLE = args.style
-    if args.force: ALLOW_REUSE = False
+    srt_path = args.srt if args.srt else SRT_PATH
+    output_root = args.out if args.out else OUTPUT_ROOT
+    segment_seconds = args.seg_sec if args.seg_sec else SEGMENT_SECONDS
+    width = args.width if args.width else WIDTH
+    height = args.height if args.height else HEIGHT
+    video_fps = args.fps if args.fps else VIDEO_FPS
+    video_bitrate = args.bitrate if args.bitrate else VIDEO_BITRATE
+    global_style = args.style if args.style else GLOBAL_STYLE
+    allow_reuse = not args.force if args.force else ALLOW_REUSE
 
     slug = resolve_slug(args.audio)
-    output_dir = Path(OUTPUT_ROOT) / slug
-    output_dir.mkdir(parents_ok=True)
+    output_dir = Path(output_root) / slug
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     logger = setup_logger(output_dir / "run.log")
 
     try:
         # Step 1: Parse transcript
-        lines = parse_transcript(args.audio, SRT_PATH)
+        lines = parse_transcript(args.audio, srt_path)
         logger.info("Parsed transcript")
 
         # Step 2: Segment
-        segments = segment_transcript(lines, SEGMENT_SECONDS, MAX_SEG_TEXT_CHARS, output_dir / "segments.json")
+        segments = segment_transcript(lines, segment_seconds, MAX_SEG_TEXT_CHARS, output_dir / "segments.json")
         logger.info(f"Segmented into {len(segments)} segments")
 
         # Step 3: Generate prompts (SKIP if OpenAI key not set)
         prompts_file = output_dir / "prompts.json"
-        if ALLOW_REUSE and prompts_file.exists():
+        if allow_reuse and prompts_file.exists():
             with open(prompts_file) as f:
                 prompts = json.load(f)
             logger.info("Reusing prompts")
@@ -69,7 +69,7 @@ def main():
                 print("SKIP: No OpenAI API key set, using dummy prompts")
                 prompts = {"results": [{"segment_index": i, "prompt": f"dummy prompt for segment {i}", "negative_prompt": NEGATIVE_STYLE, "caption": f"Segment {i}"} for i in range(len(segments))]}
             else:
-                prompts = generate_prompts(segments, GLOBAL_STYLE, NEGATIVE_STYLE)
+                prompts = generate_prompts(segments, global_style, NEGATIVE_STYLE)
             with open(prompts_file, "w") as f:
                 json.dump(prompts, f, indent=2)
             logger.info("Generated prompts")
