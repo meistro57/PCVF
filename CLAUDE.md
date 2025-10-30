@@ -15,6 +15,12 @@ pip install -r requirements.txt
 
 # Or use the installer script
 ./install.sh
+
+# Check GPU setup for faster transcription (optional)
+python check_gpu_setup.py
+
+# Setup GPU on WSL2 (optional, for 5-10x faster transcription)
+./setup_gpu_wsl2.sh
 ```
 
 ### Running the Pipeline
@@ -27,6 +33,16 @@ python podcast_video_factory.py --audio input/episode.mp3 --srt input/transcript
 
 # Force regeneration (ignore cached segments/prompts/images)
 python podcast_video_factory.py --audio input/episode.mp3 --force
+
+# Control transcription device and model
+python podcast_video_factory.py --audio input/episode.mp3 \
+  --whisper-device auto --whisper-model base
+
+# Force GPU transcription (requires CUDA + cuDNN)
+python podcast_video_factory.py --audio input/episode.mp3 --whisper-device cuda
+
+# Force CPU transcription (slower but compatible)
+python podcast_video_factory.py --audio input/episode.mp3 --whisper-device cpu
 
 # Override config parameters
 python podcast_video_factory.py --audio input/episode.mp3 \
@@ -113,6 +129,34 @@ output/{slug}/
 **FFmpeg**: Required in PATH for video assembly. Pipeline uses concat demuxer with explicit durations + subtitle filter.
 
 **OpenAI API**: Set `OPENAI_API_KEY` environment variable or in config.py. Supports OpenAI-compatible endpoints via `OPENAI_BASE_URL`.
+
+**GPU Acceleration (Optional)**: For 5-10x faster transcription, install CUDA Toolkit + cuDNN. Use `check_gpu_setup.py` to diagnose GPU status and `setup_gpu_wsl2.sh` to install on WSL2. Transcription defaults to `--whisper-device auto` which tries GPU and gracefully falls back to CPU.
+
+## GPU Setup & Transcription
+
+### Device Selection
+- `--whisper-device auto` (default): Try GPU, fallback to CPU if unavailable
+- `--whisper-device cuda`: Force GPU (requires CUDA + cuDNN)
+- `--whisper-device cpu`: Force CPU (slower, more compatible)
+
+### Model Selection
+- `--whisper-model tiny`: Fastest, least accurate (~39M parameters)
+- `--whisper-model base`: Fast, decent quality (~74M parameters)
+- `--whisper-model small`: Balanced (~244M parameters)
+- `--whisper-model medium`: High quality (~769M parameters)
+- `--whisper-model large-v3`: Best quality, slowest (~1550M parameters, default)
+
+### Speed Comparison
+| Model | Device | Relative Speed |
+|-------|--------|----------------|
+| large-v3 | CUDA | 5-10x realtime |
+| large-v3 | CPU | 0.5-1x realtime |
+| base | CPU | 2-3x realtime |
+| tiny | CPU | 5-8x realtime |
+
+### GPU Setup Scripts
+- `check_gpu_setup.py`: Diagnostic tool for NVIDIA drivers, CUDA, cuDNN, PyTorch, and faster-whisper
+- `setup_gpu_wsl2.sh`: Automated installer for CUDA Toolkit + cuDNN on WSL2
 
 ## Development Notes
 

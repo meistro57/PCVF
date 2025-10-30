@@ -6,6 +6,7 @@ import os
 import json
 from pathlib import Path
 from config import *
+from version import __version__
 from core.transcript_parser import parse_transcript
 from core.segmenter import segment_transcript
 from core.prompt_generator import generate_prompts
@@ -19,7 +20,11 @@ def resolve_slug(audio_path):
     return Path(audio_path).stem
 
 def main():
-    parser = argparse.ArgumentParser(description="Podcast Video Factory")
+    parser = argparse.ArgumentParser(
+        description="Podcast Video Factory - Transform audio into visual stories",
+        epilog=f"Version {__version__}"
+    )
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     parser.add_argument("--audio", required=True, help="Path to audio file")
     parser.add_argument("--srt", help="Path to transcript file (.srt, .txt, .json)")
     parser.add_argument("--out", help="Output directory root")
@@ -30,6 +35,8 @@ def main():
     parser.add_argument("--bitrate", help="Bitrate")
     parser.add_argument("--style", help="Global style")
     parser.add_argument("--force", action="store_true", help="Force regeneration")
+    parser.add_argument("--whisper-model", default="large-v3", help="Whisper model size (tiny, base, small, medium, large-v3)")
+    parser.add_argument("--whisper-device", default="auto", help="Transcription device (auto, cuda, cpu)")
     args = parser.parse_args()
 
     # Override config with args
@@ -51,7 +58,14 @@ def main():
 
     try:
         # Step 1: Parse transcript
-        lines = parse_transcript(args.audio, srt_path)
+        # Pass transcription config if auto-transcribing
+        if srt_path:
+            lines = parse_transcript(args.audio, srt_path)
+        else:
+            # Import transcribe_audio directly for more control
+            from core.transcript_parser import transcribe_audio
+            from pathlib import Path
+            lines = transcribe_audio(Path(args.audio), model_size=args.whisper_model, device=args.whisper_device)
         logger.info("Parsed transcript")
 
         # Step 2: Segment

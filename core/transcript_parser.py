@@ -55,9 +55,34 @@ def parse_text_transcript(text_path: Path) -> List[Line]:
     
     return lines
 
-def transcribe_audio(audio_path: Path, model_size="large-v3") -> List[Line]:
-    """ Transcribe audio using faster-whisper (not used in testing) """
-    model = WhisperModel(model_size)
+def transcribe_audio(audio_path: Path, model_size="large-v3", device="auto") -> List[Line]:
+    """
+    Transcribe audio using faster-whisper
+
+    Args:
+        audio_path: Path to audio file
+        model_size: Model size (tiny, base, small, medium, large-v3)
+        device: "auto" (try GPU, fallback to CPU), "cuda", or "cpu"
+    """
+    # Auto-detect best device
+    if device == "auto":
+        try:
+            # Try GPU with small test
+            test_model = WhisperModel("tiny", device="cuda", compute_type="float16")
+            del test_model
+            device = "cuda"
+            compute_type = "float16"
+            print(f"✓ Using GPU for transcription (model: {model_size})")
+        except Exception as e:
+            device = "cpu"
+            compute_type = "int8"
+            print(f"⚠ GPU unavailable ({e}), using CPU for transcription")
+    elif device == "cuda":
+        compute_type = "float16"
+    else:
+        compute_type = "int8"
+
+    model = WhisperModel(model_size, device=device, compute_type=compute_type)
     segments, info = model.transcribe(str(audio_path))
     srt_path = audio_path.with_suffix('.srt')
     with open(srt_path, 'w') as f:
