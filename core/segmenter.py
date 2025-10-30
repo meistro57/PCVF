@@ -21,7 +21,9 @@ def segment_transcript(lines: List[Line], segment_seconds: int, max_chars: int, 
         start_ms = i
         end_ms = min(i + segment_ms, total_duration)
         if end_ms - start_ms < 3000 and i > 0:  # Merge if <3s and not first
-            segments[-1].end_ms = end_ms
+            # Replace last segment with extended version (NamedTuple is immutable)
+            prev = segments[-1]
+            segments[-1] = Segment(index=prev.index, start_ms=prev.start_ms, end_ms=end_ms, text=prev.text)
             continue
 
         text_parts = []
