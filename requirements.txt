@@ -1,0 +1,11 @@
+# Podcast Video Factory - Requirements
+
+faster-whisper==1.1.1
+requests==2.32.3
+websocket-client==1.8.0
+openai==1.54.0
+pysrt==1.1.2
+dataclasses-json==0.6.7
+
+tqdm>=4.65.0
+jsonschema>=4.21.0

@@ -1,0 +1,58 @@
+{
+  "1": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "$POSITIVE_PROMPT"
+    }
+  },
+  "2": {
+    "class_type": "CLIPTextEncode",
+    "inputs": {
+      "text": "$NEGATIVE_PROMPT",
+      "clip": ["1", 1]
+    }
+  },
+  "3": {
+    "class_type": "CheckpointLoaderSimple",
+    "inputs": {
+      "ckpt_name": "sdxl_base_1.0.safetensors"
+    }
+  },
+  "4": {
+    "class_type": "EmptyLatentImage",
+    "inputs": {
+      "width": $WIDTH,
+      "height": $HEIGHT,
+      "batch_size": $BATCH_SIZE
+    }
+  },
+  "5": {
+    "class_type": "KSampler",
+    "inputs": {
+      "seed": $SEED,
+      "steps": $STEPS,
+      "cfg": $CFG,
+      "sampler_name": "$SAMPLER_NAME",
+      "scheduler": "$SCHEDULER",
+      "denoise": 1,
+      "model": ["3", 0],
+      "positive": ["1", 0],
+      "negative": ["2", 0],
+      "latent_image": ["4", 0]
+    }
+  },
+  "6": {
+    "class_type": "VAEDecode",
+    "inputs": {
+      "samples": ["5", 0],
+      "vae": ["3", 2]
+    }
+  },
+  "7": {
+    "class_type": "SaveImage",
+    "inputs": {
+      "filename_prefix": "seg_$INDEX",
+      "images": ["6", 0]
+    }
+  }
+}
